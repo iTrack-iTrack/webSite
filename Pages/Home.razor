@@ -1,7 +1,6 @@
 ﻿
 
 @page "/"
-@inject ChartService chartingService
 @using ChartJs.Blazor.PieChart
 @using ChartJs.Blazor.LineChart
 @using ChartJs.Blazor.Common.Time
@@ -20,16 +19,22 @@
 
 
 <button class="btn-login" @onclick="TogglePieChart">Toggle Pie Chart</button>
+<button class="btn-login" @onclick="ToggleLineChart">Toggle Line Chart</button>
+
 <div hidden="@hidePieChart">
-		<Chart Config="_pieConfig"></Chart>
+	<Chart Config="_pieConfig"></Chart>
 </div>
-<Chart Config="_LineChartConfig"></Chart>
+<div hidden="@hideLineChart"
+	<Chart Config="_LineChartConfig"></Chart>
+</div>
 
 @code {
 
 	private PieConfig _pieConfig = new PieConfig();
 	private LineConfig _LineChartConfig = new LineConfig();
+
 	private bool hidePieChart = true;
+	private bool hideLineChart = true;
 
 	protected override void OnInitialized()
 	{
@@ -38,6 +43,10 @@
 	private void TogglePieChart()
 	{
 		hidePieChart = !hidePieChart;
+	}
+	private void ToggleLineChart()
+	{
+		hideLineChart = !hideLineChart;
 	}
 	private void ConfigurePieConfig()
 	{
