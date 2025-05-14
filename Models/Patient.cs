@@ -1,4 +1,4 @@
-﻿namespace Itrack_Iwatch.Models  
+﻿namespace SmartWatchWeb.Models  
 {
     public class Patient
     {
