@@ -1,11 +1,145 @@
-﻿@page "/"
+﻿
+
+@page "/"
+@using ChartJs.Blazor.PieChart
+@using ChartJs.Blazor.LineChart
+@using ChartJs.Blazor.Common.Time
+
+
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
+<h1>CHART.JS</h1>
 <div class="centered">
-    <button class="btn-login">LOGIN</button>
+	<button class="btn-login" @onclick="ConfigurePieConfig">PieChart</button>
 </div>
+<div class="centered">
+	<button class="btn-login" @onclick="ConfigureLineConfig">TimeChart</button>
+</div>
+
+
+<button class="btn-login" @onclick="TogglePieChart">Toggle Pie Chart</button>
+<button class="btn-login" @onclick="ToggleLineChart">Toggle Line Chart</button>
+
+<div hidden="@hidePieChart">
+	<Chart Config="_pieConfig"></Chart>
+</div>
+<div hidden="@hideLineChart"
+	<Chart Config="_LineChartConfig"></Chart>
+</div>
+
+@code {
+
+	private PieConfig _pieConfig = new PieConfig();
+	private LineConfig _LineChartConfig = new LineConfig();
+
+	private bool hidePieChart = true;
+	private bool hideLineChart = true;
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+	}
+	private void TogglePieChart()
+	{
+		hidePieChart = !hidePieChart;
+	}
+	private void ToggleLineChart()
+	{
+		hideLineChart = !hideLineChart;
+	}
+	private void ConfigurePieConfig()
+	{
+		_pieConfig.Options = new PieOptions
+			{
+				Responsive = true,
+				Title = new OptionsTitle
+				{
+					Display = true,
+					Text = "sample"
+				}
+			};
+		foreach(var party in new[] {"Party1", "Party2", "Party3" })
+		{
+			_pieConfig.Data.Labels.Add(party);
+		}
+		var dataset = new PieDataset<int>(new[] { 15, 30, 45 })
+			{
+				BackgroundColor = new[]
+				{
+				ColorUtil.ColorHexString(255,0,0),
+				ColorUtil.ColorHexString(0,255,0),
+				ColorUtil.ColorHexString(0,0,255)
+			}
+		};
+		_pieConfig.Data.Datasets.Add(dataset);
+	}
+	private void ConfigureLineConfig()
+	{
+		_LineChartConfig.Options = new LineOptions
+			{
+				Responsive = true,
+				Title = new OptionsTitle
+				{
+					Display = true,
+					Text = "User Steps Over Time"
+				},
+				Scales = new Scales
+				{
+					XAxes = new List<CartesianAxis>
+				{
+					new TimeAxis
+					{
+						Time = new TimeOptions
+						{
+							Unit = TimeMeasurement.Day,
+							// Change to Hour/Minute if needed
+						},
+						ScaleLabel = new ScaleLabel
+						{
+							Display = true,
+							LabelString = "Date"
+						}
+					}
+				},
+					YAxes = new List<CartesianAxis>
+				{
+					new LinearCartesianAxis
+					{
+						Ticks = new LinearCartesianTicks
+						{
+							BeginAtZero = true
+						},
+						ScaleLabel = new ScaleLabel
+						{
+							Display = true,
+							LabelString = "Steps"
+						}
+					}
+				}
+				}
+			};
+
+		// Example data points
+		var dataset = new LineDataset<TimePoint>
+			{
+				Label = "Steps",
+				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+				Fill = false
+			};
+
+		dataset.AddRange(new[]
+		{
+			new TimePoint(new DateTime(2025, 5, 1), 1200),
+			new TimePoint(new DateTime(2025, 5, 2), 1500),
+			new TimePoint(new DateTime(2025, 5, 3), 800),
+			new TimePoint(new DateTime(2025, 5, 4), 1750)
+		});
+
+		_LineChartConfig.Data.Datasets.Clear();
+		_LineChartConfig.Data.Labels.Clear(); // Time charts usually ignore this, but safe to clear
+		_LineChartConfig.Data.Datasets.Add(dataset);
+	}
+
+}
