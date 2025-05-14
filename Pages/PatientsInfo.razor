@@ -1,0 +1,82 @@
+﻿@page "/patientsinfo"
+@using System.Linq
+@using Itrack_Iwatch.Models
+@using Itrack_Iwatch.Shared
+
+<input class="form-control mb-3"
+       placeholder="Search patients..."
+       @bind="searchTerm"
+       @bind:event="oninput" />
+
+@if (!FilteredPatients.Any())
+{
+    <p>No patients found matching "@("+ searchTerm +")".</p>
+}
+else
+{
+    <div class="card-container">
+        @foreach (var patient in FilteredPatients)
+        {
+            <PatientProfile Patient="patient" />
+        }
+    </div>
+}
+
+@code {
+
+    private string searchTerm = string.Empty;
+
+    private List<Patient> demoPatients = new()
+  {
+    new Patient
+    {
+      ProfilePictureUrl = "images/luffypfp.jpg",
+      Name = "Monkey D. Luffy",
+      Contact = "+31 123456778",
+      DateOfBirth = new DateTime(1985, 4, 12),
+      Address = " Schuttersveld 1D, 7514 AC Enschede",
+      Sickness = "Fracture"
+    },
+    new Patient
+    {
+      ProfilePictureUrl = "images/robinpfp.jpg",
+      Name = "Robin Chan",
+      Contact = "+31 123456778",
+      DateOfBirth = new DateTime(1990, 8, 23),
+      Address = "Schuttersveld 1D, 7514 AC Enschede",
+      Sickness = "Asthma"
+    },
+    new Patient
+    {
+      ProfilePictureUrl = "images/zoropfp.jpeg",
+      Name = "Zoro",
+      Contact = "+31 123456778",
+      DateOfBirth = new DateTime(1975, 12, 5),
+      Address = "Schuttersveld 1D, 7514 AC Enschede",
+      Sickness = "Diabetes"
+    },
+    new Patient
+    {
+      ProfilePictureUrl = "images/sanjipfp.jpg",
+      Name = "Sanji Khun",
+      Contact = "+31 123456778",
+      DateOfBirth = new DateTime(1988, 12, 5),
+      Address = "Schuttersveld 1D, 7514 AC Enschede",
+      Sickness = "Love"
+    },
+
+    new Patient
+    {
+      ProfilePictureUrl = "images/acepfp.jpg",
+      Name = "Donut D Ace",
+      Contact = "+31 123456778",
+      DateOfBirth = new DateTime(1999, 12, 5),
+      Address = "Schuttersveld 1D, 7514 AC Enschede",
+      Sickness = "Lava"
+    }
+  };
+    private IEnumerable<Patient> FilteredPatients =>
+      string.IsNullOrWhiteSpace(searchTerm)
+        ? demoPatients
+        : demoPatients.Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+}

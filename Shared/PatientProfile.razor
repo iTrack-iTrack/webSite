@@ -1,0 +1,31 @@
+﻿@using Itrack_Iwatch.Models
+
+<div class="card" style="max-width: 600px; margin: auto;">
+    <div class="card-body" style="display: flex; align-items: center; gap: 1rem;">
+        <img src="@Patient.ProfilePictureUrl.TrimStart('/')"
+             alt="Profile Picture"
+             style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%; flex-shrink: 0;" />
+        <div>
+            <h5 class="card-title">@Patient.Name</h5>
+            <p><strong>Age:</strong> @Age</p>
+            <p><strong>Contact:</strong> @Patient.Contact</p>
+            <p><strong>Address:</strong> @Patient.Address</p>
+            <p><strong>Sickness:</strong> @Patient.Sickness</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Patient Patient { get; set; }
+
+    private int Age => CalculateAge(Patient.DateOfBirth);
+
+    private int CalculateAge(DateTime dob)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dob.Year;
+        if (dob.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+}
