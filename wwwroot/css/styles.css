@@ -24,10 +24,10 @@ a, .btn-link {
 .btn-Login {
     padding: 1rem 2rem;
     font-size: 1.5rem;
-    background-color: #007bff;
+    background-color: #b32121;
     color: white;
-    border: none;
-    border-radius: 8px;
+    border: thin;
+    border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
@@ -116,4 +116,50 @@ a, .btn-link {
 
 code {
     color: #c02d76;
+}
+.title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-top: 20px;
+    color: #333;
+}
+
+.data-type-selector {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.data-card {
+    width: 300px;
+    height: 120px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #444;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+    .data-card:hover {
+        transform: scale(1.05);
+        background: #4a90e2;
+        color: white;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+.chart-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }

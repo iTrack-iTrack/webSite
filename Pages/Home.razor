@@ -7,19 +7,22 @@
 
 
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Data Dashboard</PageTitle>
 
-<h1>CHART.JS</h1>
-<div class="centered">
-	<button class="btn-login" @onclick="ConfigurePieConfig">PieChart</button>
+<h1 class="title">Health Statystics</h1>
+
+<div class="data-type-selector">
+	<div class="data-card" @onclick="TogglePieChart">Pie Chart Data</div>
+	<div class="data-card" @onclick="ToggleBpm" style="display: flex; flex-direction: column; align-items: center;">
+		<span>Live BPM</span>
+		<i class="fa-solid fa-heart-pulse" style="color: red;"></i>
+	</div>
+	<div class="data-card" @onclick="ToggleSteps">Other Data</div>
 </div>
-<div class="centered">
-	<button class="btn-login" @onclick="ConfigureLineConfig">TimeChart</button>
-</div>
 
 
-<button class="btn-login" @onclick="TogglePieChart">Toggle Pie Chart</button>
-<button class="btn-login" @onclick="ToggleLineChart">Toggle Line Chart</button>
+<!--<button class="btn-Login" @onclick="TogglePieChart">Toggle Pie Chart</button> -->
+<!-- <button class="btn-Login" @onclick="ToggleLineChart">Toggle Line Chart</button> -->
 
 <div hidden="@hidePieChart">
 	<Chart Config="_pieConfig"></Chart>
@@ -29,6 +32,13 @@
 </div>
 
 @code {
+	private Random rand = new Random();
+	private Timer updateTimer;
+	private Queue<TimePoint> bpmDataQueue = new Queue<TimePoint>();
+
+	private LineDataset<TimePoint> bpmDataset;
+	private LineDataset<TimePoint> stepsDataset;
+	private LineDataset<TimePoint> otherDataSet;
 
 	private PieConfig _pieConfig = new PieConfig();
 	private LineConfig _LineChartConfig = new LineConfig();
@@ -39,17 +49,49 @@
 	protected override void OnInitialized()
 	{
 		base.OnInitialized();
+		ConfigurePieConfig();
+		ConfigureLineConfig();
+		StartLiveData();
 	}
 	private void TogglePieChart()
 	{
-		hidePieChart = !hidePieChart;
+		hidePieChart = false;
+		hideLineChart = true;
+
+		StopLiveData();
 	}
-	private void ToggleLineChart()
+	private void ToggleBpm()
 	{
-		hideLineChart = !hideLineChart;
+		hideLineChart = false;
+		hidePieChart = true;
+		ToggleLineChartWithDatasets(bpmDataset);
+		StartLiveData();
 	}
+	private void ToggleSteps()
+	{
+		hideLineChart = false;
+		hidePieChart = true;
+		ToggleLineChartWithDatasets(otherDataSet);
+		StopLiveData();
+	}
+	private void ToggleLineChartWithDatasets(params LineDataset<TimePoint>[] datasetsToShow)
+	{
+		hideLineChart = false;
+		hidePieChart = true;
+
+		_LineChartConfig.Data.Datasets.Clear();
+		foreach (var dataset in datasetsToShow)
+		{
+			_LineChartConfig.Data.Datasets.Add(dataset);
+		}
+
+		StateHasChanged(); // Refresh UI
+
+	}
+
 	private void ConfigurePieConfig()
 	{
+		hidePieChart = true;
 		_pieConfig.Options = new PieOptions
 			{
 				Responsive = true,
@@ -76,13 +118,14 @@
 	}
 	private void ConfigureLineConfig()
 	{
+		hideLineChart = true;
 		_LineChartConfig.Options = new LineOptions
 			{
 				Responsive = true,
 				Title = new OptionsTitle
 				{
 					Display = true,
-					Text = "User Steps Over Time"
+					Text = "User BPM Over Time"
 				},
 				Scales = new Scales
 				{
@@ -92,13 +135,13 @@
 					{
 						Time = new TimeOptions
 						{
-							Unit = TimeMeasurement.Day,
+							Unit = TimeMeasurement.Minute,
 							// Change to Hour/Minute if needed
 						},
 						ScaleLabel = new ScaleLabel
 						{
 							Display = true,
-							LabelString = "Date"
+							LabelString = "Time"
 						}
 					}
 				},
@@ -113,7 +156,7 @@
 						ScaleLabel = new ScaleLabel
 						{
 							Display = true,
-							LabelString = "Steps"
+							LabelString = "BPM"
 						}
 					}
 				}
@@ -121,25 +164,80 @@
 			};
 
 		// Example data points
-		var dataset = new LineDataset<TimePoint>
+		bpmDataset = new LineDataset<TimePoint>
+			{
+				Label = "Live BPM",
+				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Red),
+				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Red),
+				Fill = false
+			};
+		stepsDataset = new LineDataset<TimePoint>
 			{
 				Label = "Steps",
 				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
 				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
 				Fill = false
 			};
+		otherDataSet = new LineDataset<TimePoint>
+			{
+				Label = "Steps",
+				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Orange),
+				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Orange),
+				Fill = false
+			};
 
-		dataset.AddRange(new[]
-		{
-			new TimePoint(new DateTime(2025, 5, 1), 1200),
-			new TimePoint(new DateTime(2025, 5, 2), 1500),
-			new TimePoint(new DateTime(2025, 5, 3), 800),
-			new TimePoint(new DateTime(2025, 5, 4), 1750)
-		});
+		otherDataSet.AddRange(new[]
+			{
+				new TimePoint(new DateTime(2025, 5, 1), 12000),
+				new TimePoint(new DateTime(2025, 5, 5), 15000),
+				new TimePoint(new DateTime(2025, 5, 15), 8000),
+				new TimePoint(new DateTime(2025, 5,20), 17050)
+			});
 
 		_LineChartConfig.Data.Datasets.Clear();
-		_LineChartConfig.Data.Labels.Clear(); // Time charts usually ignore this, but safe to clear
-		_LineChartConfig.Data.Datasets.Add(dataset);
+		_LineChartConfig.Data.Labels.Clear();
+		_LineChartConfig.Data.Datasets.Add(bpmDataset);
+	}
+	private void StartLiveData()
+	{
+		if (updateTimer != null)
+			return;
+
+		updateTimer = new Timer(1000); // 1 second
+		updateTimer.Elapsed += async (s, e) => await AddLivePointAsync();
+		updateTimer.AutoReset = true;
+		updateTimer.Start();
+	}
+	private void StopLiveData()
+	{
+		if (updateTimer != null)
+		{
+			updateTimer.Stop();
+			updateTimer.Dispose();
+			updateTimer = null;
+		}
+	}
+
+	private async Task AddLivePointAsync()
+	{
+		// Simulate getting a value
+		int bpm = rand.Next(60, 100);
+		var time = DateTime.Now;
+
+		var newPoint = new TimePoint(time, bpm);
+		bpmDataQueue.Enqueue(newPoint);
+
+		if (bpmDataQueue.Count > 30)
+			bpmDataQueue.Dequeue();
+
+		await InvokeAsync(() =>
+		{
+			bpmDataset.Clear();
+			bpmDataset.AddRange(bpmDataQueue);
+
+			_LineChartConfig.Data.Labels.Clear(); // if needed
+			StateHasChanged();
+		});
 	}
 
 }
