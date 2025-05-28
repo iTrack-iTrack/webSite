@@ -1,6 +1,6 @@
 ﻿
 
-@page "/"
+@page "/home"
 @using ChartJs.Blazor.PieChart
 @using ChartJs.Blazor.LineChart
 @using ChartJs.Blazor.Common.Time
@@ -9,7 +9,7 @@
 
 <PageTitle>Data Dashboard</PageTitle>
 
-<h1 class="title">Health Statystics</h1>
+<h1 class="title">ITrack & IWatch</h1>
 
 <div class="data-type-selector">
 	<div class="data-card" @onclick="TogglePieChart">Pie Chart Data</div>
@@ -17,7 +17,7 @@
 		<span>Live BPM</span>
 		<i class="fa-solid fa-heart-pulse" style="color: red;"></i>
 	</div>
-	<div class="data-card" @onclick="ToggleSteps">Other Data</div>
+	<div class="data-card" @onclick="ToggleSteps">Steps</div>
 </div>
 
 
@@ -38,7 +38,7 @@
 
 	private LineDataset<TimePoint> bpmDataset;
 	private LineDataset<TimePoint> stepsDataset;
-	private LineDataset<TimePoint> otherDataSet;
+	private LineDataset<TimePoint> stepsDataSet;
 
 	private PieConfig _pieConfig = new PieConfig();
 	private LineConfig _LineChartConfig = new LineConfig();
@@ -51,7 +51,6 @@
 		base.OnInitialized();
 		ConfigurePieConfig();
 		ConfigureLineConfig();
-		StartLiveData();
 	}
 	private void TogglePieChart()
 	{
@@ -71,7 +70,7 @@
 	{
 		hideLineChart = false;
 		hidePieChart = true;
-		ToggleLineChartWithDatasets(otherDataSet);
+		ToggleLineChartWithDatasets(stepsDataSet);
 		StopLiveData();
 	}
 	private void ToggleLineChartWithDatasets(params LineDataset<TimePoint>[] datasetsToShow)
@@ -136,7 +135,6 @@
 						Time = new TimeOptions
 						{
 							Unit = TimeMeasurement.Minute,
-							// Change to Hour/Minute if needed
 						},
 						ScaleLabel = new ScaleLabel
 						{
@@ -178,7 +176,7 @@
 				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
 				Fill = false
 			};
-		otherDataSet = new LineDataset<TimePoint>
+		stepsDataSet = new LineDataset<TimePoint>
 			{
 				Label = "Steps",
 				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Orange),
@@ -186,7 +184,7 @@
 				Fill = false
 			};
 
-		otherDataSet.AddRange(new[]
+		stepsDataSet.AddRange(new[]
 			{
 				new TimePoint(new DateTime(2025, 5, 1), 12000),
 				new TimePoint(new DateTime(2025, 5, 5), 15000),
@@ -210,12 +208,15 @@
 	}
 	private void StopLiveData()
 	{
+		bpmDataQueue.Clear();
+		bpmDataset.Clear();
 		if (updateTimer != null)
 		{
 			updateTimer.Stop();
 			updateTimer.Dispose();
 			updateTimer = null;
 		}
+
 	}
 
 	private async Task AddLivePointAsync()
