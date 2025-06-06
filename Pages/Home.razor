@@ -1,56 +1,114 @@
-﻿
+﻿@page "/home"
+@inject Services.userState admin
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
-@page "/home"
-@using ChartJs.Blazor.PieChart
 @using ChartJs.Blazor.LineChart
 @using ChartJs.Blazor.Common.Time
 
+<PageTitle>SmartWatch Overview</PageTitle>
+
+<!-- top row -->
+<div class="flex justify-between items-center px-6 py-4 bg-white shadow">
+	<div class="text-xl font-bold text-gray-800">ITrack & IWatch</div>
+	<a href="/account" class="profile-icon">
+		<i class="fas fa-user"></i>
+	</a>
+</div>
 
 
-<PageTitle>Data Dashboard</PageTitle>
+<div class="p-6 space-y-6">
 
-<h1 class="title">ITrack & IWatch</h1>
+	<!-- cards -->
+	<div class="flex w-full gap-4">
+		<!-- bpm -->
+		<div @onclick="ToggleBpm" class="data-card" style="flex-basis: 30%;">
+			<div class="text-2xl font-semibold">Live BPM</div>
+			<div class="text-4xl text-red-600 font-bold mt-2">@GetLatestBpm()</div>
+		</div>
 
-<div class="data-type-selector">
-	<div class="data-card" @onclick="TogglePieChart">Pie Chart Data</div>
-	<div class="data-card" @onclick="ToggleBpm" style="display: flex; flex-direction: column; align-items: center;">
-		<span>Live BPM</span>
-		<i class="fa-solid fa-heart-pulse" style="color: red;"></i>
+		<!-- steps -->
+		<div @onclick="ToggleSteps" class="data-card" style="flex-basis: 30%;">
+			<div class="text-2xl font-semibold">Steps</div>
+			<div class="text-4xl text-blue-600 font-bold mt-2">15,000</div>
+		</div>
+
+		<!-- oxygen -->
+		<div class="data-card" style="flex-basis: 40%;">
+			<div class="text-2xl font-semibold">Oxidation level</div>
+			<div class="text-4xl text-green-600 font-bold mt-2">@oxidation %</div>
+			<canvas id="gaugeCanvas" width="300" height="150"></canvas>
+		</div>
 	</div>
-	<div class="data-card" @onclick="ToggleSteps">Steps</div>
-</div>
 
 
-<!--<button class="btn-Login" @onclick="TogglePieChart">Toggle Pie Chart</button> -->
-<!-- <button class="btn-Login" @onclick="ToggleLineChart">Toggle Line Chart</button> -->
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+		<!-- Line chart -->
+		<div id="LineContainer">
+			<Chart Config="_LineChartConfig"></Chart>
+		</div>
 
-<div hidden="@hidePieChart">
-	<Chart Config="_pieConfig"></Chart>
-</div>
-<div hidden="@hideLineChart"
-	<Chart Config="_LineChartConfig"></Chart>
+		<!-- Bar chart for steps -->
+		<div id="BarContainer">
+			<Chart Config="_BarChartConfig"></Chart>
+		</div>
+	</div>
+	<RadzenDropDown @bind-Value="selectedRange" Data="@ranges" Style="width: 200px;" />
+
+	@if (selectedRange == "Custom range")
+	{
+		<div class="flex gap-4 mt-2">
+			<RadzenDatePicker @bind-Value="startDate" DateFormat="yyyy-MM-dd" />
+			<RadzenDatePicker @bind-Value="endDate" DateFormat="yyyy-MM-dd" />
+		</div>
+	}
 </div>
 
 @code {
+	List<string> ranges = new() { "Today", "Last 7 days", "Last 30 days", "Custom range" };
+	string selectedRange = "Today";
+
+	DateTime startDate = DateTime.Today;
+	DateTime endDate = DateTime.Today;
+
 	private Random rand = new Random();
 	private Timer updateTimer;
 	private Queue<TimePoint> bpmDataQueue = new Queue<TimePoint>();
 
 	private LineDataset<TimePoint> bpmDataset;
-	private LineDataset<TimePoint> stepsDataset;
-	private LineDataset<TimePoint> stepsDataSet;
+	private BarDataset<TimePoint> stepsDataset;
 
-	private PieConfig _pieConfig = new PieConfig();
 	private LineConfig _LineChartConfig = new LineConfig();
+	private BarConfig _BarChartConfig = new BarConfig();
 
 	private bool hidePieChart = true;
-	private bool hideLineChart = true;
+	private bool hideLineChart = false;
+
+	private int oxidation = 50;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await JS.InvokeVoidAsync("createGauge", "gaugeCanvas", 50);
+		}
+	}
+
+
+
+	private string GetLatestBpm()
+	{
+		if (bpmDataQueue.Count == 0)
+			return "—";
+		return bpmDataQueue.Last().Y.ToString();
+	}
 
 	protected override void OnInitialized()
 	{
 		base.OnInitialized();
-		ConfigurePieConfig();
 		ConfigureLineConfig();
+		ConfigureBarConfig();
+		StartLiveData();
 	}
 	private void TogglePieChart()
 	{
@@ -61,63 +119,83 @@
 	}
 	private void ToggleBpm()
 	{
-		hideLineChart = false;
-		hidePieChart = true;
-		ToggleLineChartWithDatasets(bpmDataset);
 		StartLiveData();
 	}
 	private void ToggleSteps()
 	{
-		hideLineChart = false;
-		hidePieChart = true;
-		ToggleLineChartWithDatasets(stepsDataSet);
 		StopLiveData();
 	}
-	private void ToggleLineChartWithDatasets(params LineDataset<TimePoint>[] datasetsToShow)
+
+	private void ConfigureBarConfig()
 	{
-		hideLineChart = false;
-		hidePieChart = true;
-
-		_LineChartConfig.Data.Datasets.Clear();
-		foreach (var dataset in datasetsToShow)
-		{
-			_LineChartConfig.Data.Datasets.Add(dataset);
-		}
-
-		StateHasChanged(); // Refresh UI
-
-	}
-
-	private void ConfigurePieConfig()
-	{
-		hidePieChart = true;
-		_pieConfig.Options = new PieOptions
+		_BarChartConfig.Options = new BarOptions
 			{
 				Responsive = true,
 				Title = new OptionsTitle
 				{
 					Display = true,
-					Text = "sample"
+					Text = "Steps by Day"
+				},
+				Scales = new BarScales
+				{
+					XAxes = new List<CartesianAxis>
+					{
+						new TimeAxis
+						{
+							Time = new TimeOptions
+							{
+								Unit = TimeMeasurement.Day,
+							},
+							ScaleLabel = new ScaleLabel
+							{
+								Display = true,
+								LabelString = "Time"
+							}
+						}
+					},
+					YAxes = new List<CartesianAxis>
+					{
+						new LinearCartesianAxis
+						{
+							Ticks = new LinearCartesianTicks
+							{
+								BeginAtZero = true
+							},
+							ScaleLabel = new ScaleLabel
+							{
+								Display = true,
+								LabelString = "Steps"
+							}
+						}
+					}
 				}
 			};
-		foreach(var party in new[] {"Party1", "Party2", "Party3" })
-		{
-			_pieConfig.Data.Labels.Add(party);
-		}
-		var dataset = new PieDataset<int>(new[] { 15, 30, 45 })
+
+		stepsDataset = new BarDataset<TimePoint>
 			{
-				BackgroundColor = new[]
-				{
-				ColorUtil.ColorHexString(255,0,0),
-				ColorUtil.ColorHexString(0,255,0),
-				ColorUtil.ColorHexString(0,0,255)
-			}
-		};
-		_pieConfig.Data.Datasets.Add(dataset);
+				Label = "Steps",
+				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+			};
+
+		stepsDataset.AddRange(new[]
+			{
+				new TimePoint(new DateTime(2025, 5, 3), 12000),
+				new TimePoint(new DateTime(2025, 5, 5), 15000),
+				new TimePoint(new DateTime(2025, 5, 6), 8000),
+				new TimePoint(new DateTime(2025, 5,8), 17050)
+			});
+
+		stepsDataset.BarThickness = 25;
+
+		_BarChartConfig.Data.Datasets.Clear();
+		_BarChartConfig.Data.Labels.Clear();
+		_BarChartConfig.Data.Datasets.Add(stepsDataset);
 	}
+
+
 	private void ConfigureLineConfig()
 	{
-		hideLineChart = true;
 		_LineChartConfig.Options = new LineOptions
 			{
 				Responsive = true,
@@ -169,28 +247,7 @@
 				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Red),
 				Fill = false
 			};
-		stepsDataset = new LineDataset<TimePoint>
-			{
-				Label = "Steps",
-				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
-				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
-				Fill = false
-			};
-		stepsDataSet = new LineDataset<TimePoint>
-			{
-				Label = "Steps",
-				BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Orange),
-				BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Orange),
-				Fill = false
-			};
 
-		stepsDataSet.AddRange(new[]
-			{
-				new TimePoint(new DateTime(2025, 5, 1), 12000),
-				new TimePoint(new DateTime(2025, 5, 5), 15000),
-				new TimePoint(new DateTime(2025, 5, 15), 8000),
-				new TimePoint(new DateTime(2025, 5,20), 17050)
-			});
 
 		_LineChartConfig.Data.Datasets.Clear();
 		_LineChartConfig.Data.Labels.Clear();
@@ -221,7 +278,6 @@
 
 	private async Task AddLivePointAsync()
 	{
-		// Simulate getting a value
 		int bpm = rand.Next(60, 100);
 		var time = DateTime.Now;
 
@@ -231,13 +287,13 @@
 		if (bpmDataQueue.Count > 30)
 			bpmDataQueue.Dequeue();
 
-		await InvokeAsync(() =>
+		await InvokeAsync(async() =>
 		{
 			bpmDataset.Clear();
 			bpmDataset.AddRange(bpmDataQueue);
-
-			_LineChartConfig.Data.Labels.Clear(); // if needed
+			//_LineChartConfig.Data.Labels.Clear(); // if needed
 			StateHasChanged();
+
 		});
 	}
 

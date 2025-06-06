@@ -3,6 +3,7 @@
 @page "/"
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
+@inject Services.userState admin
 
 <div class="d-flex justify-content-center align-items-center vh-100">
     <div class="card shadow-lg rounded p-4" style="min-width: 320px;">
@@ -67,10 +68,12 @@
         if (loginModel.Username == testUser && loginModel.Password == testPass)
         {
             // Navigate to patient profile page
+            admin.SetAdmin(true);
             Navigation.NavigateTo("/patientsinfo");
         }
         else if (loginModel.Username == user1 && loginModel.Password == password1)
         {
+            admin.SetAdmin(false);
             Navigation.NavigateTo("/home");
         }
         else
