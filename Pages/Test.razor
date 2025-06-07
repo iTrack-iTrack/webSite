@@ -1,0 +1,249 @@
+﻿@page "/test"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+
+<style>
+    .register-background {
+        background: linear-gradient(135deg, #ADD8E6, #2a5298);
+        min-height: 100vh;
+        padding: 3rem 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .register-card {
+        background-color: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        padding: 2rem;
+        width: 100%;
+        max-width: 900px; /* Increased width */
+        overflow-y: auto;
+        max-height: 90vh;
+    }
+
+
+    .register-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #1e3c72;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .form-control, input[type="file"] {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid #ccc;
+    }
+
+    .btn-submit {
+        background-color: #2a5298;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        width: 100%;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+
+        .btn-submit:hover {
+            background-color: #1e3c72;
+        }
+
+    .text-danger {
+        font-size: 0.9rem;
+        color: red;
+    }
+</style>
+
+<div class="register-background">
+    <div class="register-card">
+        <div class="register-title">Registration</div>
+
+        <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label class="form-label">Profile Picture</label>
+                <InputFile OnChange="OnInputFileChange" />
+                @if (profilePreviewUrl != null)
+                {
+                    <img src="@profilePreviewUrl" alt="Profile Preview" style="width:100px; height:100px; object-fit:cover; border-radius:50%; margin-top:0.5rem;" />
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <InputText class="form-control" @bind-Value="registerModel.Username" />
+                <ValidationMessage For="@(() => registerModel.Username)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <InputText type="password" class="form-control" @bind-Value="registerModel.Password" />
+                <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <InputText type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword" />
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger" />
+            </div>
+
+            <hr />
+
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <InputText class="form-control" @bind-Value="registerModel.FirstName" />
+                <ValidationMessage For="@(() => registerModel.FirstName)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <InputText class="form-control" @bind-Value="registerModel.LastName" />
+                <ValidationMessage For="@(() => registerModel.LastName)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Date of Birth</label>
+                <InputDate class="form-control" @bind-Value="registerModel.DateOfBirth" />
+                <ValidationMessage For="@(() => registerModel.DateOfBirth)" class="text-danger" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Age</label>
+                <input class="form-control" value="@Age" disabled />
+            </div>
+
+            <hr />
+
+            <div class="form-group">
+                <label class="form-label">Country</label>
+                <InputText class="form-control" @bind-Value="registerModel.Country" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Region</label>
+                <InputText class="form-control" @bind-Value="registerModel.Region" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Street</label>
+                <InputText class="form-control" @bind-Value="registerModel.Street" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">House Number</label>
+                <InputText class="form-control" @bind-Value="registerModel.HouseNumber" />
+            </div>
+
+            <hr />
+
+            <div class="form-group">
+                <label class="form-label">Contact Info</label>
+                <InputText class="form-control" @bind-Value="registerModel.Contact" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Sickness</label>
+                <InputText class="form-control" @bind-Value="registerModel.Sickness" />
+            </div>
+
+            <button type="submit" class="btn-submit">Register</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+
+    private string? profilePreviewUrl;
+
+    private int Age => registerModel.DateOfBirth == default ? 0 : CalculateAge(registerModel.DateOfBirth);
+
+    private void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        // Just a quick preview by loading file into a buffer and converting to base64 string for img src
+        using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 5); // 5 MB max
+        var buffer = new byte[file.Size];
+        stream.Read(buffer, 0, (int)file.Size);
+        profilePreviewUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+
+        // Note: In a real app you would save the file somewhere or upload to server
+    }
+
+    private async Task HandleRegister()
+    {
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            // You can add an error message here if needed
+            return;
+        }
+
+        // Simulate backend logic or save data
+        await Task.Delay(500);
+
+        // Redirect or show confirmation
+        Navigation.NavigateTo("/login"); // or a success page
+    }
+
+    private int CalculateAge(DateTime dob)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dob.Year;
+        if (dob.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    public class RegisterModel
+    {
+        [Required]
+        [MinLength(4)]
+        public string Username { get; set; }
+
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; }
+
+        [Required]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; }
+
+        [Required]
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
+
+        [Required]
+        public DateTime DateOfBirth { get; set; } = DateTime.Today;
+
+        public string? Country { get; set; }
+        public string? Region { get; set; }
+        public string? Street { get; set; }
+        public string? HouseNumber { get; set; }
+
+        public string? Contact { get; set; }
+
+        public string? Sickness { get; set; }
+    }
+}
