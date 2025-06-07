@@ -128,3 +128,38 @@ code {
     gap: 1rem;
     padding: 1rem;
 }
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: rgba(255, 255, 255, 0.5); /* semi-transparent white */
+    backdrop-filter: blur(8px); /* optional blur */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.top-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.profile-area {
+    cursor: pointer;
+}
+
+.profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    transition: transform 0.2s ease;
+}
+
+.profile-area:hover .profile-image {
+    transform: scale(1.05);
+}

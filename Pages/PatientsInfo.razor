@@ -1,4 +1,5 @@
 ﻿@page "/patientsinfo"
+@layout MainLayout
 @using System.Linq
 @using SmartWatchWeb.Models
 @using SmartWatchWeb.Shared
@@ -40,7 +41,7 @@ else
     new Patient
     {
       ProfilePictureUrl = "images/robinpfp.jpg",
-      Name = "Robin Chan",
+     Name = "Robin Chan",
       Contact = "+31 123456778",
       DateOfBirth = new DateTime(1990, 8, 23),
       Address = "Schuttersveld 1D, 7514 AC Enschede",
