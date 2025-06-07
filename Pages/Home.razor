@@ -3,6 +3,12 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+@implements IAsyncDisposable
+
+@using System;
+@using System.Net.Http;
+@using System.Text.Json;
+
 @using ChartJs.Blazor.LineChart
 @using ChartJs.Blazor.Common.Time
 
@@ -22,13 +28,13 @@
 	<!-- cards -->
 	<div class="flex w-full gap-4">
 		<!-- bpm -->
-		<div @onclick="ToggleBpm" class="data-card" style="flex-basis: 30%;">
+		<div class="data-card" style="flex-basis: 30%;">
 			<div class="text-2xl font-semibold">Live BPM</div>
 			<div class="text-4xl text-red-600 font-bold mt-2">@GetLatestBpm()</div>
 		</div>
 
 		<!-- steps -->
-		<div @onclick="ToggleSteps" class="data-card" style="flex-basis: 30%;">
+		<div class="data-card" style="flex-basis: 30%;">
 			<div class="text-2xl font-semibold">Steps</div>
 			<div class="text-4xl text-blue-600 font-bold mt-2">15,000</div>
 		</div>
@@ -64,7 +70,12 @@
 	}
 </div>
 
+
+
 @code {
+
+
+
 	List<string> ranges = new() { "Today", "Last 7 days", "Last 30 days", "Custom range" };
 	string selectedRange = "Today";
 
@@ -72,7 +83,11 @@
 	DateTime endDate = DateTime.Today;
 
 	private Random rand = new Random();
-	private Timer updateTimer;
+
+	private Timer bpmUpdateTimer;
+	private Timer stepsUpdateTimer;
+	private Timer oxygenUpdateTimer;
+
 	private Queue<TimePoint> bpmDataQueue = new Queue<TimePoint>();
 
 	private LineDataset<TimePoint> bpmDataset;
@@ -85,12 +100,16 @@
 	private bool hideLineChart = false;
 
 	private int oxidation = 50;
+	private int latestBpm = 0;
+
+	private DotNetObjectReference<Home>? objRef;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
 			await JS.InvokeVoidAsync("createGauge", "gaugeCanvas", 50);
+			await StartStream();
 		}
 	}
 
@@ -108,22 +127,35 @@
 		base.OnInitialized();
 		ConfigureLineConfig();
 		ConfigureBarConfig();
-		StartLiveData();
+		objRef = DotNetObjectReference.Create(this);
+		//StartLiveData();
 	}
-	private void TogglePieChart()
+	public async Task StartStream()
 	{
-		hidePieChart = false;
-		hideLineChart = true;
+		await JS.InvokeVoidAsync("sseInterop.startBpmStream", objRef);
+	}
 
-		StopLiveData();
-	}
-	private void ToggleBpm()
+	public async Task StopStream()
 	{
-		StartLiveData();
+		await JS.InvokeVoidAsync("sseInterop.stopBpmStream");
 	}
-	private void ToggleSteps()
+	[JSInvokable]
+	public async Task OnBpmReceived(string bpm)
 	{
-		StopLiveData();
+		latestBpm = Int32.Parse(bpm);
+		var time = DateTime.Now;
+		var newPoint = new TimePoint(time, latestBpm);
+		bpmDataQueue.Enqueue(newPoint);
+
+		if (bpmDataQueue.Count > 30)
+			bpmDataQueue.Dequeue();
+
+		await InvokeAsync(() =>
+		{
+			bpmDataset.Clear();
+			bpmDataset.AddRange(bpmDataQueue);
+			StateHasChanged();
+		});
 	}
 
 	private void ConfigureBarConfig()
@@ -255,46 +287,48 @@
 	}
 	private void StartLiveData()
 	{
-		if (updateTimer != null)
+		if (bpmUpdateTimer != null)
 			return;
 
-		updateTimer = new Timer(1000); // 1 second
-		updateTimer.Elapsed += async (s, e) => await AddLivePointAsync();
-		updateTimer.AutoReset = true;
-		updateTimer.Start();
+		bpmUpdateTimer = new Timer(1000); // 1 second
+		bpmUpdateTimer.Elapsed += async (s, e) => await AddLiveBpmPoint();
+		bpmUpdateTimer.AutoReset = true;
+		bpmUpdateTimer.Start();
 	}
 	private void StopLiveData()
 	{
 		bpmDataQueue.Clear();
 		bpmDataset.Clear();
-		if (updateTimer != null)
+		if (bpmUpdateTimer != null)
 		{
-			updateTimer.Stop();
-			updateTimer.Dispose();
-			updateTimer = null;
+			bpmUpdateTimer.Stop();
+			bpmUpdateTimer.Dispose();
+			bpmUpdateTimer = null;
 		}
 
 	}
 
-	private async Task AddLivePointAsync()
+	private async Task AddLiveBpmPoint()
 	{
-		int bpm = rand.Next(60, 100);
-		var time = DateTime.Now;
 
-		var newPoint = new TimePoint(time, bpm);
+		var time = DateTime.Now;
+		var newPoint = new TimePoint(time, latestBpm);
 		bpmDataQueue.Enqueue(newPoint);
 
 		if (bpmDataQueue.Count > 30)
 			bpmDataQueue.Dequeue();
 
-		await InvokeAsync(async() =>
+		await InvokeAsync(() =>
 		{
 			bpmDataset.Clear();
 			bpmDataset.AddRange(bpmDataQueue);
-			//_LineChartConfig.Data.Labels.Clear(); // if needed
 			StateHasChanged();
-
 		});
+	}
+	public async ValueTask DisposeAsync()
+	{
+		await StopStream();
+		objRef?.Dispose();
 	}
 
 }
