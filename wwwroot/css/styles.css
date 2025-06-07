@@ -133,7 +133,7 @@ code {
     flex-wrap: wrap;
 }
 
-.data-card {
+.data-card-patient {
     width: 300px;
     height: 120px;
     background: white;
@@ -147,13 +147,27 @@ code {
     color: #444;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
+  
+.data-card {
+    background-color: white;
+    border-radius: 1rem; /* rounded-2xl */
+    padding: 1rem; /* p-4 */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Tailwind-like default shadow */
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+    transform: scale(1);
 }
 
-    .data-card:hover {
+    .data-card-patient:hover {
         transform: scale(1.05);
         background: #4a90e2;
         color: white;
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+      .data-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* shadow-xl */
     }
 
 .chart-container {
@@ -338,3 +352,23 @@ code {
     width: 120px;
     font-weight: 600;
 }
+.profile-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: #e5e7eb; 
+    border-radius: 9999px;
+    text-decoration: none;
+    color: #4b5563; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+    .profile-icon:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        color: #1f2937; 
+    }
+

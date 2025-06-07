@@ -2,7 +2,9 @@
 @page "/"
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
+
 @inject UserSessionService SessionService
+@inject Services.userState admin
 
 <style>
     body, html {
@@ -112,11 +114,14 @@
         if (loginModel.Username == testUser && loginModel.Password == testPass)
         {
             SessionService.SetUser(testUser);
+            // Navigate to patient profile page
+            admin.SetAdmin(true);
             Navigation.NavigateTo("/patientsinfo");
         }
         else if (loginModel.Username == user1 && loginModel.Password == password1)
         {
             SessionService.SetUser(user1);
+            admin.SetAdmin(false);
             Navigation.NavigateTo("/home");
         }
         else
