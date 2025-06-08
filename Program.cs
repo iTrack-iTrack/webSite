@@ -15,8 +15,10 @@ namespace SmartWatchWeb
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 			builder.Services.AddSingleton<userState>();
             builder.Services.AddScoped<UserSessionService>();
-          
-			await builder.Build().RunAsync();
+            builder.Services.AddScoped<IHealthDataService, HealthDataService>();
+            builder.Services.AddScoped<IBpmStreamService, BpmStreamService>();
+
+            await builder.Build().RunAsync();
         }
     }
 }

@@ -1,0 +1,25 @@
+﻿@inherits BaseChart<TimePoint, BarConfig>
+<Chart Config="Config" />
+
+@code {
+    private BarDataset<TimePoint> _dataset = new()
+        {
+            Label = "Daily Steps",
+            BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+            BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Blue),
+            BarThickness = 25
+        };
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (Config == null || Data == null) return;
+
+        Config.Options ??= new BarOptions();
+        Config.Data.Datasets.Clear();
+        _dataset.Clear();
+        _dataset.AddRange(Data);
+        Config.Data.Datasets.Add(_dataset);
+    }
+}

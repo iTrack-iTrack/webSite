@@ -1,0 +1,20 @@
+﻿@typeparam TItem
+@typeparam TConfig where TConfig : ConfigBase
+
+<Chart Config="Config" />
+
+@code {
+    [Parameter]
+    public TConfig? Config { get; set; }
+
+    [Parameter]
+    public IEnumerable<TItem>? Data { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Config == null) return;
+    }
+}

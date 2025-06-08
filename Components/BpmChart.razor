@@ -1,0 +1,25 @@
+﻿@inherits BaseChart<TimePoint, LineConfig>
+<Chart Config="Config" />
+
+@code {
+    private LineDataset<TimePoint> _dataset = new()
+        {
+            Label = "Live BPM",
+            BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Red),
+            BorderColor = ColorUtil.FromDrawingColor(System.Drawing.Color.Red),
+            Fill = false
+        };
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (Config == null || Data == null) return;
+
+        Config.Options ??= new LineOptions();
+        Config.Data.Datasets.Clear();
+        _dataset.Clear();
+        _dataset.AddRange(Data);
+        Config.Data.Datasets.Add(_dataset);
+    }
+}
