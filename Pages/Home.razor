@@ -86,10 +86,13 @@
     public int UserId { get; set; }
     public class HealthDataModel
     {
+        public string date_time { get; set; }
+        public string step { get; set; }
         public string temperature { get; set; }
+        public string longitude { get; set; }
+        public string latitude { get; set; }
         public string bpm { get; set; }
         public string blood_oxygen { get; set; }
-        public string step { get; set; }
     }
 
     private List<TimePoint> stepsData = new()
@@ -118,8 +121,10 @@
         if (firstRender) 
         {
             _objRef = DotNetObjectReference.Create<object>(this);
-            Console.WriteLine($"The USERID IS: {UserId}");
-            await BpmStream.StartAsync(_objRef, UserId);
+            Console.WriteLine($"The token is: {user.token}");
+
+
+            await BpmStream.StartAsync(_objRef, UserId, user.token);
             await JS.InvokeVoidAsync("createGauge", "gaugeCanvas", HealthData.Oxidation);
         }
     }
@@ -137,9 +142,9 @@
     {
         try
         {
+            Console.WriteLine(jsonData);
             var data = JsonSerializer.Deserialize<HealthDataModel>(jsonData);
 
-            Console.WriteLine(jsonData);
             HealthData.AddBpmDataPoint(int.Parse(data.bpm));
             HealthData.Steps = int.Parse(data.step);
             HealthData.Oxidation = int.Parse(data.blood_oxygen);

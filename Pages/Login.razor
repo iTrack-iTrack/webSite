@@ -128,7 +128,7 @@
 
                 SessionService.SetLoggedInUserId(ID.ToString()); // Store as string if needed
                 user.SetToken(responseString);
-
+                Console.WriteLine($"the user service token: {user.token}");
                 Console.WriteLine($"The USERID IN LOGIN IS: {ID}");
                 Navigation.NavigateTo($"/home/{ID}");
             }
