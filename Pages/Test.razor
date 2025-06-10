@@ -1,6 +1,7 @@
 ﻿@page "/test"
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
+@inject HttpClient http
 
 <style>
     .register-background {
@@ -166,7 +167,7 @@
                 <InputText class="form-control" @bind-Value="registerModel.Sickness" />
             </div>
 
-            <button type="submit" class="btn-submit">Register</button>
+            <button @onclick="registerUser" type="submit" class="btn-submit">Register</button>
         </EditForm>
     </div>
 </div>
@@ -204,6 +205,28 @@
 
         // Redirect or show confirmation
         Navigation.NavigateTo("/login"); // or a success page
+    }
+
+    private async Task registerUser()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://itrackandi.watch:8082/register/");
+        var collection = new List<KeyValuePair<string, string>>();
+        collection.Add(new("password", registerModel.Password));
+        collection.Add(new("first_name", registerModel.FirstName));
+        collection.Add(new("last_name", registerModel.LastName));
+        collection.Add(new("date_of_birth", registerModel.DateOfBirth.ToString("yyyy-MM-dd")));
+        collection.Add(new("country", registerModel.Country));
+        collection.Add(new("region", registerModel.Region));
+        collection.Add(new("street", registerModel.Street));
+        collection.Add(new("house_number", registerModel.HouseNumber.ToString()));
+        collection.Add(new("contact", registerModel.Contact));
+        collection.Add(new("sickness", registerModel.Sickness));
+        var content = new FormUrlEncodedContent(collection);
+        request.Content = content;
+        var response = await http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
+
     }
 
     private int CalculateAge(DateTime dob)

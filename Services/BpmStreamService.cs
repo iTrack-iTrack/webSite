@@ -4,7 +4,7 @@ namespace SmartWatchWeb.Services
 {
 	public interface IBpmStreamService
 	{
-		Task StartAsync(DotNetObjectReference<object> dotNetRef);
+		Task StartAsync(DotNetObjectReference<object> dotNetRef, int userID);
 		Task StopAsync();
 	}
 	public class BpmStreamService : IBpmStreamService
@@ -16,8 +16,8 @@ namespace SmartWatchWeb.Services
 			_jsRuntime = jsRuntime;
 		}
 
-		public Task StartAsync(DotNetObjectReference<object> dotNetRef)
-			=> _jsRuntime.InvokeVoidAsync("sseInterop.startBpmStream", dotNetRef).AsTask();
+		public Task StartAsync(DotNetObjectReference<object> dotNetRef, int userID)
+			=> _jsRuntime.InvokeVoidAsync("sseInterop.startBpmStream", dotNetRef, userID).AsTask();
 
 		public Task StopAsync()
 			=> _jsRuntime.InvokeVoidAsync("sseInterop.stopBpmStream").AsTask();

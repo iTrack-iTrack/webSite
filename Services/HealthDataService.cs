@@ -27,6 +27,7 @@ namespace SmartWatchWeb.Services
 			if (BpmHistory.Count > MaxDataPoints) BpmHistory.Dequeue();
 		}
 
+
 		public void Dispose() => BpmHistory.Clear();
 	}
 }

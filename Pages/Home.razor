@@ -5,6 +5,7 @@
 
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject Services.userState user
 
 @implements IAsyncDisposable
 
@@ -59,8 +60,15 @@
     </div>
 
     <!-- Date range selector -->
-    <RadzenDropDown @bind-Value="selectedRange" Data="@ranges" Style="width: 200px;" />
+    <div class="flex items-center gap-4">
+        <RadzenDropDown @bind-Value="selectedRange" Data="@ranges" Style="width: 200px;" />
 
+        <button class="rounded-md shadow-md px-4 py-2 bg-white text-black font-semibold border border-gray-300
+           transition-transform transition-shadow duration-200
+           hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400">
+            Load
+        </button>
+    </div>
     @if (selectedRange == "Custom range")
     {
         <div class="flex gap-4 mt-2">
@@ -97,7 +105,7 @@
         if (firstRender) 
         {
             _objRef = DotNetObjectReference.Create<object>(this);
-            await BpmStream.StartAsync(_objRef);
+            await BpmStream.StartAsync(_objRef, user.userID);
             await JS.InvokeVoidAsync("createGauge", "gaugeCanvas", HealthData.Oxidation);
         }
     }
