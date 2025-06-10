@@ -4,7 +4,8 @@
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
 @inject Services.UserSessionService SessionService
-@inject Services.userState admin
+@inject Services.userState user
+@inject HttpClient http
 
 <style>
     body, html {
@@ -65,9 +66,9 @@
             }
 
             <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <InputText id="username" class="form-control" @bind-Value="loginModel.Username" />
-                <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
+                <label for="userid" class="form-label">Username</label>
+                <InputText id="username" class="form-control" @bind-Value="loginModel.UserId" />
+                <ValidationMessage For="@(() => loginModel.UserId)" class="text-danger" />
             </div>
 
             <div class="mb-4">
@@ -96,6 +97,7 @@
 @code {
     private LoginModel loginModel = new();
     private bool isLoading = false;
+    private int ID = -1;
     private string loginError;
 
     private async Task HandleValidSubmit()
@@ -103,41 +105,69 @@
         isLoading = true;
         loginError = null;
 
-        await Task.Delay(500); // Simulate backend delay
-
-        const string testUser = "admin";
-        const string testPass = "1234";
-
-        const string user1 = "patient1";
-        const string password1 = "12345";
-
-        if (loginModel.Username == testUser && loginModel.Password == testPass)
+        try
         {
-            // Navigate to patient profile page
-            admin.SetAdmin(true);
-            SessionService.SetLoggedInUsername(loginModel.Username);
+            // First validate the user ID is a number
+            if (!int.TryParse(loginModel.UserId, out ID))
+            {
+                loginError = "User ID must be a number";
+                isLoading = false;
+                return;
+            }
 
-            Navigation.NavigateTo("/patientsinfo");
+            var response = await http.PostAsJsonAsync("http://itrackandi.watch:8082/login", new
+            {
+                user_id = ID, // Now using the parsed integer
+                password = loginModel.Password
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseString = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Login response: " + responseString);
+
+                SessionService.SetLoggedInUserId(ID.ToString()); // Store as string if needed
+                user.SetToken(responseString);
+
+                Console.WriteLine($"The USERID IN LOGIN IS: {ID}");
+                Navigation.NavigateTo($"/home/{ID}");
+            }
+            else
+            {
+                loginError = "Invalid username or password";
+            }
         }
-        else if (loginModel.Username == user1 && loginModel.Password == password1)
+        catch (Exception ex)
         {
-            admin.SetAdmin(false);
-            SessionService.SetLoggedInUsername(loginModel.Username);
-
-            Navigation.NavigateTo("/home");
+            loginError = "Login failed. Please try again.";
+            Console.WriteLine("Login error: " + ex.Message);
         }
-        else
+        finally
         {
-            loginError = "Invalid username or password.";
+            isLoading = false;
         }
+    }
+    private async void loginWithAPI()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://itrackandi.watch:8082/login");
+        var collection = new List<KeyValuePair<string, string>>();
+        collection.Add(new("user_id", loginModel.UserId));
+        collection.Add(new("password", loginModel.Password));
+        var content = new FormUrlEncodedContent(collection);
+        request.Content = content;
+        var response = await http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-        isLoading = false;
+        user.SetToken(await response.Content.ReadAsStringAsync());
+        return;
+
     }
 
     public class LoginModel
     {
         [Required]
-        public string Username { get; set; }
+        public string UserId { get; set; }
 
         [Required]
         public string Password { get; set; }

@@ -1,6 +1,6 @@
 ﻿window.sseInterop = {
     startBpmStream: function (dotnetHelper, ID) {
-        const source = new EventSource(`http://itrackandi.watch:8082/${ID}/live/bpm`);
+        const source = new EventSource(`http://itrackandi.watch:8082/${ID}/live`);
 
         source.addEventListener("message", (e) => {
             dotnetHelper.invokeMethodAsync("OnBpmReceived", e.data);

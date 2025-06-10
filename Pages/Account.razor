@@ -1,6 +1,11 @@
 ﻿@page "/account"
+@page "/account/{UserId:int}"
 @inject Services.UserSessionService SessionService
 @inject NavigationManager NavigationManager
+@inject Services.userState user
+@inject HttpClient http
+@using System.Text.Json;
+
 @using SmartWatchWeb.Models
 
 <style>
@@ -112,7 +117,7 @@
     }
 </style>
 
-@if (CurrentPatient == null)
+@if (patientInfo == null)
 {
     <div class="account-background">
         <p class="text-white">Loading your profile...</p>
@@ -130,14 +135,14 @@ else
 
         <!-- Profile Card -->
         <div class="profile-card">
-            <img src="@CurrentPatient.ProfilePictureUrl.TrimStart('/')"
+            <img src=""
                  alt="Profile Picture"
                  class="profile-picture" />
 
             <div class="profile-info">
-                <h3>@CurrentPatient.Name</h3>
-                <p><strong>Sickness:</strong> @CurrentPatient.Sickness</p>
-                <p><strong>Address:</strong> @CurrentPatient.Address</p>
+                <h3>@patientInfo.Name</h3>
+                <p><strong>Sickness:</strong> @patientInfo.sickness</p>
+                <p><strong>Address:</strong> @patientInfo.Address</p>
             </div>
         </div>
 
@@ -145,10 +150,10 @@ else
         <div class="card-section">
             <h4 class="section-title">Personal Information</h4>
             <div class="info-grid">
-                <div class="info-item"><strong>Name:</strong> @CurrentPatient.Name</div>
+                <div class="info-item"><strong>Name:</strong> @patientInfo.Name</div>
                 <div class="info-item"><strong>Age:</strong> @Age</div>
-                <div class="info-item"><strong>Contact:</strong> @CurrentPatient.Contact</div>
-                <div class="info-item"><strong>Sickness:</strong> @CurrentPatient.Sickness</div>
+                <div class="info-item"><strong>Contact:</strong> @patientInfo.contact</div>
+                <div class="info-item"><strong>Sickness:</strong> @patientInfo.sickness</div>
             </div>
         </div>
 
@@ -156,7 +161,7 @@ else
         <div class="card-section">
             <h4 class="section-title">Address</h4>
             <div class="info-grid">
-                <div class="info-item"><strong>Address:</strong> @CurrentPatient.Address</div>
+                <div class="info-item"><strong>Address:</strong> @patientInfo.Address</div>
                 <div class="info-item"><strong>City:</strong> Grand City</div>
                 <div class="info-item"><strong>Region:</strong> Blue East</div>
                 <div class="info-item"><strong>Country:</strong> DigitalLand</div>
@@ -168,44 +173,51 @@ else
         <div class="card-section">
             <div class="section-title">Medical & Contact Info</div>
             <div class="info-grid">
-                <div class="info-item"><strong>Contact:</strong> @CurrentPatient.Contact</div>
-                <div class="info-item"><strong>Sickness:</strong> @CurrentPatient.Sickness</div>
+                <div class="info-item"><strong>Contact:</strong> @patientInfo.contact</div>
+                <div class="info-item"><strong>Sickness:</strong> @patientInfo.sickness</div>
             </div>
         </div>
     </div>
 }
 
 @code {
-    private Patient CurrentPatient;
+    [Parameter]
+    public int UserId { get; set; }
+    Patient patientInfo = new Patient();
 
-    private List<Patient> demoPatients = new()
+    private int Age => CalculateAge(patientInfo?.date_of_birth ?? DateTime.Today);
+
+    protected override async void OnInitialized()
     {
-        new Patient
+        var request = new HttpRequestMessage(HttpMethod.Get, $"http://itrackandi.watch:8082/{UserId}/info");
+        request.Headers.Add("Authorization", "Bearer " + user.token);
+
+        try
         {
-            Name = "patient1",
-            ProfilePictureUrl = "images/zoropfp.jpeg",
-            Contact = "123456",
-            DateOfBirth = new DateTime(1990,1,1),
-            Address = "Schuttersveld",
-            Sickness = "Broken arm"
-        },
-        new Patient
-        {
-            Name = "admin",
-            ProfilePictureUrl = "images/robinpfp.jpg",
-            Contact = "987654",
-            DateOfBirth = new DateTime(1985,1,1),
-            Address = "Grand Line",
-            Sickness = "Leadership"
+            var response = await http.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            // Parse JSON response to your class
+            var responseString = await response.Content.ReadAsStringAsync();
+            patientInfo = JsonSerializer.Deserialize<Patient>(responseString);
+
+            Console.WriteLine($"Patient Name: {patientInfo.Name}");
+            Console.WriteLine($"Age: {CalculateAge(patientInfo.date_of_birth)}");
+
         }
-    };
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+            throw; // or handle the error appropriately
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Failed to parse response: {ex.Message}");
+            throw; // or handle the error appropriately
+        }
 
-    private int Age => CalculateAge(CurrentPatient?.DateOfBirth ?? DateTime.Today);
+       
 
-    protected override void OnInitialized()
-    {
-        var username = SessionService.LoggedInUsername;
-        CurrentPatient = demoPatients.FirstOrDefault(p => p.Name == username);
     }
 
     private int CalculateAge(DateTime dob)
@@ -223,7 +235,7 @@ else
 
     private void Logout()
     {
-        SessionService.ClearUsername();
+        
         NavigationManager.NavigateTo("/");
     }
 }

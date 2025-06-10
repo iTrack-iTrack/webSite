@@ -1,4 +1,6 @@
 ﻿@page "/home"
+@page "/home/{UserId:int}"
+
 @using SmartWatchWeb.Components
 @using System.Text.Json
 @inject Services.IHealthDataService HealthData
@@ -80,6 +82,8 @@
 </div>
 
 @code {
+    [Parameter]
+    public int UserId { get; set; }
     public class HealthDataModel
     {
         public string temperature { get; set; }
@@ -114,7 +118,8 @@
         if (firstRender) 
         {
             _objRef = DotNetObjectReference.Create<object>(this);
-            await BpmStream.StartAsync(_objRef, user.userID);
+            Console.WriteLine($"The USERID IS: {UserId}");
+            await BpmStream.StartAsync(_objRef, UserId);
             await JS.InvokeVoidAsync("createGauge", "gaugeCanvas", HealthData.Oxidation);
         }
     }

@@ -2,21 +2,21 @@
 {
 	public class UserSessionService
 	{
-		public string LoggedInUsername { get; private set; }
+		public string LoggedInUserId { get; private set; }
 
-		public void SetLoggedInUsername(string username)
+		public void SetLoggedInUserId(string username)
 		{
-			LoggedInUsername = username;
+			LoggedInUserId = username;
 		}
-		public void ClearUsername()
+		public void ClearUserId()
 		{
-			LoggedInUsername = null;
+			LoggedInUserId = null;
 		}
 
 
 		public void Clear()
 		{
-			LoggedInUsername = null;
+			LoggedInUserId= null;
 		}
 	}
 

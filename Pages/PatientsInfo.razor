@@ -1,7 +1,7 @@
 ﻿@page "/patientsinfo"
+@inject HttpClient Http
 @layout MainLayout
-@using System.Linq
-@using SmartWatchWeb.Models
+@using System.Text.Json.Serialization
 @using SmartWatchWeb.Shared
 
 <input class="form-control mb-3"
@@ -9,12 +9,22 @@
        @bind="searchTerm"
        @bind:event="oninput" />
 
-@if (!FilteredPatients.Any())
+<p>Total patients loaded: @patients.Count</p>
+
+
+@if (FilteredPatients == null)
 {
-    <p>No patients found matching "@("+ searchTerm +")".</p>
+    <p>Loading...</p>
+}
+else if (!FilteredPatients.Any())
+{
+    <p>No patients found matching "@searchTerm".</p>
 }
 else
 {
+    <p>Total patients loaded: @patients.Count</p>
+    <p>Filtered patients shown: @FilteredPatients.Count()</p>
+
     <div class="card-container">
         @foreach (var patient in FilteredPatients)
         {
@@ -24,60 +34,50 @@ else
 }
 
 @code {
-
     private string searchTerm = string.Empty;
+    private List<Patient> patients = new();
 
-    private List<Patient> demoPatients = new()
-  {
-    new Patient
-    {
-      ProfilePictureUrl = "images/luffypfp.jpg",
-      Name = "Monkey D. Luffy",
-      Contact = "+31 123456778",
-      DateOfBirth = new DateTime(1985, 4, 12),
-      Address = " Schuttersveld 1D, 7514 AC Enschede",
-      Sickness = "Fracture"
-    },
-    new Patient
-    {
-      ProfilePictureUrl = "images/robinpfp.jpg",
-      Name = "Robin Chan",
-      Contact = "+31 123456778",
-      DateOfBirth = new DateTime(1990, 8, 23),
-      Address = "Schuttersveld 1D, 7514 AC Enschede",
-      Sickness = "Asthma"
-    },
-    new Patient
-    {
-      ProfilePictureUrl = "images/zoropfp.jpeg",
-      Name = "Zoro",
-      Contact = "+31 123456778",
-      DateOfBirth = new DateTime(1975, 12, 5),
-      Address = "Schuttersveld 1D, 7514 AC Enschede",
-      Sickness = "Diabetes"
-    },
-    new Patient
-    {
-      ProfilePictureUrl = "images/sanjipfp.jpg",
-      Name = "Sanji Khun",
-      Contact = "+31 123456778",
-      DateOfBirth = new DateTime(1988, 12, 5),
-      Address = "Schuttersveld 1D, 7514 AC Enschede",
-      Sickness = "Love"
-    },
-
-    new Patient
-    {
-      ProfilePictureUrl = "images/acepfp.jpg",
-      Name = "Donut D Ace",
-      Contact = "+31 123456778",
-      DateOfBirth = new DateTime(1999, 12, 5),
-      Address = "Schuttersveld 1D, 7514 AC Enschede",
-      Sickness = "Lava"
-    }
-  };
     private IEnumerable<Patient> FilteredPatients =>
-      string.IsNullOrWhiteSpace(searchTerm)
-        ? demoPatients
-        : demoPatients.Where(p => p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? patients
+            : patients.Where(p => !string.IsNullOrEmpty(p.Name) &&
+                                  p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await Http.GetFromJsonAsync<List<UserSummary>>("http://itrackandi.watch:8082/");
+            if (summary == null) return;
+
+            var tasks = summary.Select(async user =>
+            {
+                try
+                {
+                    var result = await Http.GetFromJsonAsync<List<Patient>>($"http://itrackandi.watch:8082/{user.user_id}/info");
+                    return result?.FirstOrDefault();
+                }
+                catch
+                {
+                    return null;
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+            patients = results.Where(p => p != null).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error loading patients: " + ex.Message);
+        }
+    }
+
+    public class UserSummary
+    {
+        public int user_id { get; set; }
+        public string first_name { get; set; }
+        public string last_name { get; set; }
+    }
+
+    
 }

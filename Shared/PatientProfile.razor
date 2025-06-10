@@ -1,26 +1,58 @@
 ﻿@using SmartWatchWeb.Models
 
-<NavLink class="data-card" href="/home" style="text-decoration: none; color: inherit; max-width: 600px; margin: 20px; display: block;">
-    <div class="card-body" style="display: flex; align-items: center; gap: 1rem;">
-        <img src="@Patient.ProfilePictureUrl.TrimStart('/')"
-             alt="Profile Picture"
-             style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%; flex-shrink: 0;" />
-        <div>
-            <h5 class="card-title">@Patient.Name</h5>
-            <p><strong>Age:</strong> @Age</p>
-            <p><strong>Contact:</strong> @Patient.Contact</p>
-            <p><strong>Address:</strong> @Patient.Address</p>
-            <p><strong>Sickness:</strong> @Patient.Sickness</p>
+<div class="cards-container">
+   
+    <NavLink class="data-card" href="/home" style="text-decoration: none; color: inherit;">
+        <div class="card-body">
+            <img src="http://itrackandi.watch:8082/picture/pfp.jpg" alt="Profile Picture"
+                 style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%;" />
+            <div>
+                <h2>@(!string.IsNullOrEmpty(Patient?.Name) ? Patient.Name : "Unknown")</h2>
+                <p><strong>Age:</strong> @(Patient?.date_of_birth != default ? Age.ToString() : "N/A")</p>
+                <p><strong>Contact:</strong> @Patient?.contact</p>
+                <p><strong>Address:</strong> @Patient?.Address</p>
+                <p><strong>Sickness:</strong> @Patient?.sickness</p>
+            </div>
         </div>
-    </div>
-</NavLink>
+    </NavLink>
 
+   
+</div>
+
+<style>
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .data-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .card-body {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .cards-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 
 @code {
     [Parameter]
     public Patient Patient { get; set; }
 
-    private int Age => CalculateAge(Patient.DateOfBirth);
+    private int Age => CalculateAge(Patient.date_of_birth);
 
     private int CalculateAge(DateTime dob)
     {

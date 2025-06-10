@@ -1,12 +1,19 @@
-﻿namespace SmartWatchWeb.Models  
+﻿public class Patient
 {
-    public class Patient
-    {
-        public string ProfilePictureUrl { get; set; }
-        public string Name { get; set; }
-        public DateTime DateOfBirth { get; set; }
-        public string Address { get; set; }
-        public string Sickness { get; set; }
-        public string Contact {  get; set; }
-    }
+    public int user_id { get; set; }
+    public string first_name { get; set; }
+    public string last_name { get; set; }
+    public string password { get; set; }
+    public DateTime date_of_birth { get; set; }
+    public string country { get; set; }
+    public string region { get; set; }
+    public string street { get; set; }
+    public string house_number { get; set; }
+    public string contact { get; set; }
+    public string sickness { get; set; }
+    public string picture { get; set; }
+
+    // Computed properties (add these!)
+    public string Name => $"{first_name} {last_name}";
+    public string Address => $"{street} {house_number}, {region}, {country}";
 }
