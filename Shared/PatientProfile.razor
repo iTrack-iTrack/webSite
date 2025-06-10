@@ -1,6 +1,6 @@
 ﻿@using SmartWatchWeb.Models
 
-<div class="card" style="max-width: 600px; margin: auto;">
+<NavLink class="data-card" href="/home" style="text-decoration: none; color: inherit; max-width: 600px; margin: 20px; display: block;">
     <div class="card-body" style="display: flex; align-items: center; gap: 1rem;">
         <img src="@Patient.ProfilePictureUrl.TrimStart('/')"
              alt="Profile Picture"
@@ -13,7 +13,8 @@
             <p><strong>Sickness:</strong> @Patient.Sickness</p>
         </div>
     </div>
-</div>
+</NavLink>
+
 
 @code {
     [Parameter]
