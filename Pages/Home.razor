@@ -1,5 +1,6 @@
 ﻿@page "/home"
 @using SmartWatchWeb.Components
+@using System.Text.Json
 @inject Services.IHealthDataService HealthData
 @inject Services.IBpmStreamService BpmStream
 
@@ -42,7 +43,7 @@
         <div class="data-card" style="flex-basis: 40%;">
             <div class="text-2xl font-semibold">Oxidation level</div>
             <div class="text-4xl text-green-600 font-bold mt-2">@HealthData.Oxidation%</div>
-            <canvas id="gaugeCanvas" width="300" height="150"></canvas>
+            <canvas id="gaugeCanvas" width="250" height="150"></canvas>
         </div>
     </div>
 
@@ -79,6 +80,14 @@
 </div>
 
 @code {
+    public class HealthDataModel
+    {
+        public string temperature { get; set; }
+        public string bpm { get; set; }
+        public string blood_oxygen { get; set; }
+        public string step { get; set; }
+    }
+
     private List<TimePoint> stepsData = new()
     {
         new TimePoint(new DateTime(2025, 6, 1), 9800),
@@ -119,11 +128,31 @@
     }
 
     [JSInvokable]
-    public Task OnBpmReceived(string bpm)
+    public Task OnBpmReceived(string jsonData)
     {
-        HealthData.AddBpmDataPoint(int.Parse(bpm));
-        StateHasChanged();
+        try
+        {
+            var data = JsonSerializer.Deserialize<HealthDataModel>(jsonData);
+
+            Console.WriteLine(jsonData);
+            HealthData.AddBpmDataPoint(int.Parse(data.bpm));
+            HealthData.Steps = int.Parse(data.step);
+            HealthData.Oxidation = int.Parse(data.blood_oxygen);
+            HealthData.Temp = float.Parse(data.temperature);
+            updateGauge(HealthData.Oxidation);
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing health data: {ex.Message}");
+        }
+
         return Task.CompletedTask;
+    }
+    public async void updateGauge(int value)
+    {
+        await JS.InvokeVoidAsync("updateGauge", value);
     }
 
     public async ValueTask DisposeAsync()

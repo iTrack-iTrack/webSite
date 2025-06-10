@@ -46,3 +46,28 @@
     }
     window.gaugeChart = new Chart(ctx, config);
 }
+
+window.updateGauge = (value) => {
+    if (window.gaugeChart) {
+        // Update the data values
+        window.gaugeChart.data.datasets[0].data = [value, 100 - value];
+        
+        // Update the center text (via plugin)
+        window.gaugeChart.options.plugins.centerText = {
+            id: 'centerText',
+            afterDraw(chart) {
+                const { ctx, chartArea: { width, height } } = chart;
+                ctx.save();
+                ctx.font = '30px Arial';
+                ctx.fillStyle = '#000';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value + '%', width / 2, height * 0.75);
+                ctx.restore();
+            }
+        };
+        
+        // Trigger update
+        window.gaugeChart.update();
+    }
+}
