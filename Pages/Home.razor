@@ -102,13 +102,15 @@
     public int UserId { get; set; }
     public class HealthDataModel
     {
+        public string user_id { get; set; }
         public string date_time { get; set; }
-        public string step { get; set; }
-        public string temperature { get; set; }
-        public string longitude { get; set; }
-        public string latitude { get; set; }
-        public string bpm { get; set; }
-        public string blood_oxygen { get; set; }
+        public int step { get; set; }
+        public bool fall { get; set; }
+        public float temperature { get; set; }
+        public float longitude { get; set; }
+        public float latitude { get; set; }
+        public int bpm { get; set; }
+        public int blood_oxygen { get; set; }
     }
 
     private List<TimePoint> stepsData = new()
@@ -161,10 +163,10 @@
             Console.WriteLine(jsonData);
             var data = JsonSerializer.Deserialize<HealthDataModel>(jsonData);
 
-            HealthData.AddBpmDataPoint(int.Parse(data.bpm));
-            HealthData.Steps = int.Parse(data.step);
-            HealthData.Oxidation = int.Parse(data.blood_oxygen);
-            HealthData.Temp = float.Parse(data.temperature);
+            HealthData.AddBpmDataPoint(data.bpm);
+            HealthData.Steps = data.step;
+            HealthData.Oxidation = data.blood_oxygen;
+            HealthData.Temp = data.temperature;
             updateGauge(HealthData.Oxidation);
 
             StateHasChanged();
