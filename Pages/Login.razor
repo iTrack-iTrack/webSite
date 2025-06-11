@@ -4,8 +4,10 @@
 @using System.ComponentModel.DataAnnotations
 @inject NavigationManager Navigation
 @inject Services.UserSessionService SessionService
-@inject Services.userState user
 @inject HttpClient http
+@using System.Text.Json;
+@inject SmartWatchWeb.Services.userState user
+
 
 <style>
     body, html {
@@ -66,8 +68,8 @@
             }
 
             <div class="mb-3">
-                <label for="userid" class="form-label">Username</label>
-                <InputText id="username" class="form-control" @bind-Value="loginModel.UserId" />
+                <label for="userid" class="form-label">UserID</label>
+                <InputText id="userid" class="form-control" @bind-Value="loginModel.UserId" />
                 <ValidationMessage For="@(() => loginModel.UserId)" class="text-danger" />
             </div>
 
@@ -97,7 +99,6 @@
 @code {
     private LoginModel loginModel = new();
     private bool isLoading = false;
-    private int ID = -1;
     private string loginError;
 
     private async Task HandleValidSubmit()
@@ -107,34 +108,55 @@
 
         try
         {
-            // First validate the user ID is a number
-            if (!int.TryParse(loginModel.UserId, out ID))
-            {
-                loginError = "User ID must be a number";
-                isLoading = false;
-                return;
-            }
+            // Validate user ID is a number
+            int.TryParse(loginModel.UserId, out int userId);
+
+
+
 
             var response = await http.PostAsJsonAsync("http://itrackandi.watch:8082/login", new
             {
-                user_id = ID, // Now using the parsed integer
+                user_id = loginModel.UserId,
                 password = loginModel.Password
             });
 
+            var rawResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Login raw response:");
+            Console.WriteLine(rawResponse);
+
             if (response.IsSuccessStatusCode)
             {
-                var responseString = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("Login response: " + responseString);
+                if (!string.IsNullOrEmpty(rawResponse))
+                {
+                    // The API returns the token as a plain string, possibly with quotes - trim them
+                    string cleanedToken = rawResponse.Trim().Trim('"');
+                    Console.WriteLine($"Cleaned token: '{cleanedToken}'");
 
-                SessionService.SetLoggedInUserId(ID.ToString()); // Store as string if needed
-                user.SetToken(responseString);
-                Console.WriteLine($"the user service token: {user.token}");
-                Console.WriteLine($"The USERID IN LOGIN IS: {ID}");
-                Navigation.NavigateTo($"/home/{ID}");
+                    // Set the token and user ID into the shared user state service
+                    user.SetToken(cleanedToken);
+                    user.setID(userId);
+
+                    if (user.userID== 0)
+                    {
+                        user.SetAdmin(true);
+                        Navigation.NavigateTo("/patientsinfo");
+                        return;
+                    }
+                    else{
+                        Navigation.NavigateTo($"/home/{loginModel.UserId}");
+                        user.SetAdmin(false);
+                    }
+
+                    
+                }
+                else
+                {
+                    loginError = "Login response did not contain a token.";
+                }
             }
             else
             {
-                loginError = "Invalid username or password";
+                loginError = $"Login failed: {response.StatusCode}";
             }
         }
         catch (Exception ex)
@@ -147,22 +169,6 @@
             isLoading = false;
         }
     }
-    private async void loginWithAPI()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "http://itrackandi.watch:8082/login");
-        var collection = new List<KeyValuePair<string, string>>();
-        collection.Add(new("user_id", loginModel.UserId));
-        collection.Add(new("password", loginModel.Password));
-        var content = new FormUrlEncodedContent(collection);
-        request.Content = content;
-        var response = await http.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        Console.WriteLine(await response.Content.ReadAsStringAsync());
-
-        user.SetToken(await response.Content.ReadAsStringAsync());
-        return;
-
-    }
 
     public class LoginModel
     {
@@ -173,3 +179,4 @@
         public string Password { get; set; }
     }
 }
+

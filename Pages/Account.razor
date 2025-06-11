@@ -135,7 +135,8 @@ else
 
         <!-- Profile Card -->
         <div class="profile-card">
-            <img src=""
+            <!-- Show patient's picture or fallback -->
+            <img src="http://itrackandi.watch:8082/picture/pfp.jpg"
                  alt="Profile Picture"
                  class="profile-picture" />
 
@@ -161,11 +162,12 @@ else
         <div class="card-section">
             <h4 class="section-title">Address</h4>
             <div class="info-grid">
+                <!-- Use patientInfo properties here -->
                 <div class="info-item"><strong>Address:</strong> @patientInfo.Address</div>
-                <div class="info-item"><strong>City:</strong> Grand City</div>
-                <div class="info-item"><strong>Region:</strong> Blue East</div>
-                <div class="info-item"><strong>Country:</strong> DigitalLand</div>
-                <div class="info-item"><strong>House Number:</strong> 123</div>
+                <div class="info-item"><strong>Region:</strong> @patientInfo.region</div>
+                <div class="info-item"><strong>Country:</strong> @patientInfo.country</div>
+                <div class="info-item"><strong>Street:</strong> @patientInfo.street</div>
+                <div class="info-item"><strong>House Number:</strong> @patientInfo.house_number</div>
             </div>
         </div>
 
@@ -181,43 +183,74 @@ else
 }
 
 @code {
-    [Parameter]
-    public int UserId { get; set; }
-    Patient patientInfo = new Patient();
-
     private int Age => CalculateAge(patientInfo?.date_of_birth ?? DateTime.Today);
 
-    protected override async void OnInitialized()
+    [Parameter]
+    public int? UserId { get; set; }
+
+    Patient patientInfo = null; // Initialize null to show loading UI
+
+    protected override async Task OnInitializedAsync()
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"http://itrackandi.watch:8082/{UserId}/info");
-        request.Headers.Add("Authorization", "Bearer " + user.token);
+        int idToUse = UserId ?? user.userID;
+        Console.WriteLine($"accoutn user id: {user.userID}");
+
+        if (string.IsNullOrEmpty(user.token) || idToUse <= 0)
+        {
+            Console.WriteLine("No valid token or UserId found, redirecting to login...");
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        Console.WriteLine($"Token: '{user.token}'");
+        Console.WriteLine($"User ID to use: {idToUse}");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"http://itrackandi.watch:8082/{idToUse}/info");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.token);
 
         try
         {
             var response = await http.SendAsync(request);
-            response.EnsureSuccessStatusCode();
 
-            // Parse JSON response to your class
-            var responseString = await response.Content.ReadAsStringAsync();
-            patientInfo = JsonSerializer.Deserialize<Patient>(responseString);
+            var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"HTTP {(int)response.StatusCode} response content: {content}");
 
-            Console.WriteLine($"Patient Name: {patientInfo.Name}");
-            Console.WriteLine($"Age: {CalculateAge(patientInfo.date_of_birth)}");
+            if (response.IsSuccessStatusCode)
+            {
+                var patient = JsonSerializer.Deserialize<Patient>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }); //HERE
 
+                if (patient != null)
+                {
+                    patientInfo = patient;
+
+                    Console.WriteLine($"Patient Name: {patientInfo.Name}");
+                    Console.WriteLine($"Age: {CalculateAge(patientInfo.date_of_birth)}");
+
+                    StateHasChanged();
+                }
+                else
+                {
+                    Console.WriteLine("Patient list was null or empty after deserialization.");
+                }
+            }
+
+
+            else
+            {
+                Console.WriteLine($"Failed to load patient info: {response.StatusCode} {response.ReasonPhrase}");
+            }
         }
         catch (HttpRequestException ex)
         {
             Console.WriteLine($"Request failed: {ex.Message}");
-            throw; // or handle the error appropriately
         }
         catch (JsonException ex)
         {
-            Console.WriteLine($"Failed to parse response: {ex.Message}");
-            throw; // or handle the error appropriately
+            Console.WriteLine($"Failed to parse response JSON: {ex.Message}");
         }
-
-       
-
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+        }
     }
 
     private int CalculateAge(DateTime dob)
@@ -230,12 +263,15 @@ else
 
     private void GoBackHome()
     {
-        NavigationManager.NavigateTo("/home");
+        int idToUse = UserId ?? user.userID; // fallback to session user ID if UserId param is null
+        NavigationManager.NavigateTo($"/home/{idToUse}");
     }
 
     private void Logout()
     {
-        
+        // Clear state if necessary
+        user.SetToken("");
+        user.ResetUserID();
         NavigationManager.NavigateTo("/");
     }
-}
+   }
