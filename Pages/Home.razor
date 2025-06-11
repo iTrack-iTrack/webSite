@@ -28,24 +28,40 @@
     <!-- Cards row -->
     <div class="flex w-full gap-4">
         <!-- BPM card -->
-        <div class="data-card" style="flex-basis: 30%;">
-            <div class="text-2xl font-semibold">Live BPM</div>
-            <div class="text-4xl text-red-600 font-bold mt-2">
-                @GetCurrentBpmDisplay()
+        <div class="data-card bpm-card basis-[23%]">
+            <div class="card-bg"></div>
+            <div class="relative z-10 text-center">
+                <div class="text-2xl font-semibold">Live BPM</div>
+                <div class="text-4xl text-red-600 font-bold mt-2">@GetCurrentBpmDisplay()</div>
             </div>
         </div>
 
         <!-- Steps card -->
-        <div class="data-card" style="flex-basis: 30%;">
-            <div class="text-2xl font-semibold">Steps</div>
-            <div class="text-4xl text-blue-600 font-bold mt-2">@HealthData.Steps</div>
+        <div class="data-card steps-card basis-[23%]">
+            <div class="card-bg"></div>
+            <div class="relative z-10 text-center">
+                <div class="text-2xl font-semibold">Steps</div>
+                <div class="text-4xl text-blue-600 font-bold mt-2">@HealthData.Steps</div>
+            </div>
+        </div>
+
+        <!-- Temp card -->
+        <div class="data-card temp-card basis-[24%]">
+            <div class="card-bg"></div>
+            <div class="relative z-10 text-center">
+                <div class="text-2xl font-semibold">Temp</div>
+                <div class="text-4xl text-yellow-600 font-bold mt-2">@HealthData.Temp</div>
+            </div>
         </div>
 
         <!-- Oxygen card -->
-        <div class="data-card" style="flex-basis: 40%;">
-            <div class="text-2xl font-semibold">Oxidation level</div>
-            <div class="text-4xl text-green-600 font-bold mt-2">@HealthData.Oxidation%</div>
-            <canvas id="gaugeCanvas" width="250" height="150"></canvas>
+        <div class="data-card oxygen-card basis-[30%]">
+            <div class="card-bg"></div>
+            <div class="relative z-10 text-center">
+                <div class="text-2xl font-semibold">Oxidation</div>
+                <div class="text-4xl text-green-600 font-bold mt-2">@HealthData.Oxidation%</div>
+                <canvas id="gaugeCanvas" width="250" height="150" class="mx-auto"></canvas>
+            </div>
         </div>
     </div>
 

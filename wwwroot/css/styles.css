@@ -133,9 +133,9 @@ code {
 }
 .data-card {
     background-color: white;
-    border-radius: 1rem; /* rounded-2xl */
-    padding: 1rem; /* p-4 */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Tailwind-like default shadow */
+    border-radius: 1rem; 
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); 
     cursor: pointer;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 
@@ -146,6 +146,47 @@ code {
         transform: scale(1.05);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* shadow-xl */
     }
+
+.data-liveCard {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    transform: scale(1);
+    position: relative;
+}
+    .data-liveCard:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); 
+    }
+
+.card-bg {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-size: auto 80px;
+    background-position: center 60%; 
+    opacity: 0.1;
+    z-index: 0;
+}
+
+.bpm-card .card-bg {
+    background-image: url('../images/heart.png');
+}
+
+.steps-card .card-bg {
+    background-image: url('../images/steps.png');
+}
+
+.temp-card .card-bg {
+    background-image: url('../images/temp.png');
+}
 
 .chart-container {
     max-width: 900px;
