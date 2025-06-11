@@ -1,8 +1,7 @@
 ﻿@using SmartWatchWeb.Models
 
 <div class="cards-container">
-   
-    <NavLink class="data-card" href="/home" style="text-decoration: none; color: inherit;">
+    <NavLink class="data-card" href="@($"/home/{Patient.user_id}")" style="text-decoration: none; color: inherit;">
         <div class="card-body">
             <img src="http://itrackandi.watch:8082/picture/pfp.jpg" alt="Profile Picture"
                  style="width: 200px; height: 200px; object-fit: cover; border-radius: 50%;" />
@@ -15,8 +14,6 @@
             </div>
         </div>
     </NavLink>
-
-   
 </div>
 
 <style>
